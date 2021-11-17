@@ -37,9 +37,10 @@ void proccesDmaData(uint8_t sign);
 
 
 /* Space for your global variables. */
-
-	// type your global variables here:
-
+letter_count_ lettercount;
+uint8_t in_string = 0;
+uint8_t buffer[35];
+uint8_t buf_pos = 0;
 
 int main(void)
 {
@@ -114,6 +115,41 @@ void proccesDmaData(uint8_t sign)
 	/* Process received data */
 
 		// type your algorithm here:
+
+	if(sign == '#')
+	{
+
+		buf_pos = 0;
+		in_string = 1;
+
+	}
+	if(in_string == 1)
+	{
+		buffer[buf_pos] = sign;
+		if ((buf_pos >= 35)||(sign == '$'))
+		{
+			in_string = 0;
+		}
+		if (sign == '$')
+		{
+
+			lettercount.capital_letter = 0;
+			lettercount.small_letter = 0;
+
+			for (int i=0; i<=buf_pos; i++)
+			{
+				if ((buffer[i] <= 'z' ) && (buffer[i] >= 'a'))
+				{
+					lettercount.small_letter++;
+				}
+				if ((buffer[i] <= 'Z' ) && (buffer[i] >= 'A'))
+				{
+					lettercount.capital_letter++;
+				}
+			}
+		}
+		buf_pos++;
+	}
 }
 
 
