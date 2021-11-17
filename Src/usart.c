@@ -37,7 +37,7 @@ void USART2_RegisterCallback(void *callback)
 
 /* Space for global variables, if you need them */
 
-	// type global variables here
+	uint16_t buf_read_pos = 0;
 
 
 /* USART2 init function */
@@ -154,7 +154,40 @@ void USART2_PutBuffer(uint8_t *buffer, uint8_t length)
  */
 void USART2_CheckDmaReception(void)
 {
-	//type your implementation here
+	uint16_t pos = DMA_USART2_BUFFER_SIZE - LL_DMA_GetDataLength(DMA1, LL_DMA_CHANNEL_6);
+
+	if (pos >= DMA_USART2_BUFFER_SIZE)
+	{
+		// set the DMA address pointer back to the beginning of the buffer
+		LL_DMA_DisableChannel(DMA1, LL_DMA_CHANNEL_6);
+		LL_DMA_SetMemoryAddress(DMA1, LL_DMA_CHANNEL_6, (uint32_t)bufferUSART2dma);
+		LL_DMA_SetDataLength(DMA1, LL_DMA_CHANNEL_6, DMA_USART2_BUFFER_SIZE);
+		LL_DMA_EnableChannel(DMA1, LL_DMA_CHANNEL_6);
+
+		// process all data until the end of the buffer
+		while(buf_read_pos < DMA_USART2_BUFFER_SIZE)
+		{
+			if(USART2_ProcessData != 0)
+			{
+				USART2_ProcessData(bufferUSART2dma[buf_read_pos]);
+			}
+			buf_read_pos++;
+		}
+
+		buf_read_pos = 0;
+	}
+	else
+	{
+		// process new data
+		while(buf_read_pos < pos)
+		{
+			if(USART2_ProcessData != 0)
+			{
+				USART2_ProcessData(bufferUSART2dma[buf_read_pos]);
+			}
+			buf_read_pos++;
+		}
+	}
 }
 
 
