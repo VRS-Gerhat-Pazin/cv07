@@ -23,6 +23,7 @@
 #include "dma.h"
 #include "usart.h"
 #include "gpio.h"
+#include "stdio.h"
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
@@ -60,7 +61,8 @@ int main(void)
 
   /* Space for your local variables, callback registration ...*/
 
-  	  //type your code here:
+  char tx_buffer[256];
+  USART2_RegisterCallback(proccesDmaData);
 
   while (1)
   {
@@ -71,6 +73,18 @@ int main(void)
 	   */
 
   	  	  	  //type your code here:
+	  uint16_t occupied_bytes = DMA_USART2_BUFFER_SIZE - LL_DMA_GetDataLength(DMA1, LL_DMA_CHANNEL_6);
+
+	  uint32_t x = (uint32_t)occupied_bytes * 10000 / DMA_USART2_BUFFER_SIZE; // percent * 10
+	  uint8_t fraction = x % 100;
+	  uint16_t whole = (x-fraction) / 100;
+
+	  uint16_t len = sprintf(tx_buffer, "Buffer capacity: %d bytes, occupied memory: %d bytes, load [in %%]: %d.%02d\r\n",
+			  DMA_USART2_BUFFER_SIZE, occupied_bytes, whole, fraction);
+
+	  USART2_PutBuffer((uint8_t*)tx_buffer, len);
+
+	  LL_mDelay(200);
   }
   /* USER CODE END 3 */
 }
@@ -121,22 +135,17 @@ void proccesDmaData(uint8_t sign)
 
 		buf_pos = 0;
 		in_string = 1;
-
+		return;
 	}
+
 	if(in_string == 1)
 	{
-		buffer[buf_pos] = sign;
-		if ((buf_pos >= 35)||(sign == '$'))
-		{
-			in_string = 0;
-		}
 		if (sign == '$')
 		{
-
 			lettercount.capital_letter = 0;
 			lettercount.small_letter = 0;
 
-			for (int i=0; i<=buf_pos; i++)
+			for (int i=0; i<buf_pos; i++)
 			{
 				if ((buffer[i] <= 'z' ) && (buffer[i] >= 'a'))
 				{
@@ -148,6 +157,14 @@ void proccesDmaData(uint8_t sign)
 				}
 			}
 		}
+
+		if ((buf_pos >= 35)||(sign == '$'))
+		{
+			in_string = 0;
+			return;
+		}
+
+		buffer[buf_pos] = sign;
 		buf_pos++;
 	}
 }
